@@ -7526,23 +7526,29 @@ local Library do
                     searchDebounce:Cancel()
                 end
                 searchDebounce = task.delay(0.15, function()
+                    -- Проверяем, что Dropdown ещё существует
+                    if not Dropdown or not Dropdown.Options then
+                        return
+                    end
                     Library:Thread(function()
                         local InputText = Items["Search"].Instance.Text
                         local lowerInput = StringLower(InputText)
                         local pattern = Library:EscapePattern(lowerInput)
                         for _, Value in pairs(Dropdown.Options) do
-                            if InputText ~= "" then
-                                local match = StringFind(StringLower(Value.Name), pattern)
-                                if match then
-                                    Value.Button.Instance.Visible = true
-                                    Value:Search(false)
+                            if Value and Value.Name then
+                                if InputText ~= "" then
+                                    local match = StringFind(StringLower(Value.Name), pattern)
+                                    if match then
+                                        Value.Button.Instance.Visible = true
+                                        Value:Search(false)
+                                    else
+                                        Value:Search(true)
+                                        Value.Button.Instance.Visible = false
+                                    end
                                 else
-                                    Value:Search(true)
-                                    Value.Button.Instance.Visible = false
+                                    Value:Search(false)
+                                    Value.Button.Instance.Visible = true
                                 end
-                            else
-                                Value:Search(false)
-                                Value.Button.Instance.Visible = true
                             end
                         end
                     end)
