@@ -1069,6 +1069,12 @@ local Library do
         Window._blurConnection = connection
     end
 
+        -- Используем Heartbeat, но с проверкой на наличие соединения при выгрузке
+        local connection = Library:Connect(RunService.Heartbeat, UpdateBlur)
+        -- Дополнительно сохраним ссылку на connection в Window, чтобы можно было отключить при необходимости
+        Window._blurConnection = connection
+    end
+
         -- Используем Heartbeat вместо RenderStepped для снижения нагрузки
         Library:Connect(RunService.Heartbeat, UpdateBlur)
     end
