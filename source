@@ -1025,6 +1025,11 @@ local Library do
         table.insert(self.ToClean, DepthOfField.Instance)
 
         local function UpdateBlur()
+            -- Проверяем, что объекты существуют и имеют метод Tween
+            if not (DepthOfField and DepthOfField.Tween and Part and Part.Tween) then
+                return
+            end
+
             if Window.IsOpen and Item.Visible then
                 DepthOfField:Tween(nil, {NearIntensity = 1})
                 Part:Tween(nil, {Transparency = 0.97})
@@ -1057,6 +1062,12 @@ local Library do
                 BlockMesh.Instance.Scale  = Vector3New(0, 0, 0)
             end
         end
+
+        -- Используем Heartbeat, но с проверкой на наличие соединения при выгрузке
+        local connection = Library:Connect(RunService.Heartbeat, UpdateBlur)
+        -- Дополнительно сохраним ссылку на connection в Window, чтобы можно было отключить при необходимости
+        Window._blurConnection = connection
+    end
 
         -- Используем Heartbeat вместо RenderStepped для снижения нагрузки
         Library:Connect(RunService.Heartbeat, UpdateBlur)
