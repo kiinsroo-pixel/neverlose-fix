@@ -1009,6 +1009,7 @@ local Library do
             Color = FromRGB(0,0,0),
             Parent = Camera
         })
+        -- Добавляем в список на удаление
         table.insert(self.ToClean, Part.Instance)
             
         local BlockMesh = Instances:Create("BlockMesh", {Parent = Part.Instance})
@@ -1022,55 +1023,51 @@ local Library do
             NearIntensity = 1,
             Name = ""
         })
+        -- Добавляем в список на удаление
         table.insert(self.ToClean, DepthOfField.Instance)
 
-        local function UpdateBlur()
-            -- Проверяем, что объекты существуют и имеют метод Tween
-            if not (DepthOfField and DepthOfField.Tween and Part and Part.Tween) then
-                return
-            end
+        Library:Connect(RunService.RenderStepped, function()
+            if Window.IsOpen then
+                if Item.Visible then
+                    DepthOfField:Tween(nil, {NearIntensity = 1})
 
-            if Window.IsOpen and Item.Visible then
-                DepthOfField:Tween(nil, {NearIntensity = 1})
-                Part:Tween(nil, {Transparency = 0.97})
-                Part:Tween(nil, {Size = Vector3New(1, 1, 1) * 0.01})
+                    Part:Tween(nil, {Transparency = 0.97})
+                    Part:Tween(nil, {Size = Vector3New(1, 1, 1) * 0.01})
 
-                local Corner0 = BlurItem.AbsolutePosition;
-                local Corner1 = Corner0 + BlurItem.AbsoluteSize;
-                    
-                local Ray0 = Camera.ScreenPointToRay(Camera, Corner0.X, Corner0.Y, 1);
-                local Ray1 = Camera.ScreenPointToRay(Camera, Corner1.X, Corner1.Y, 1);
+                    local Corner0 = BlurItem.AbsolutePosition;
+                    local Corner1 = Corner0 + BlurItem.AbsoluteSize;
+                        
+                    local Ray0 = Camera.ScreenPointToRay(Camera, Corner0.X, Corner0.Y, 1);
+                    local Ray1 = Camera.ScreenPointToRay(Camera, Corner1.X, Corner1.Y, 1);
 
-                local Origin = Camera.CFrame.Position + Camera.CFrame.LookVector * (0.05 - Camera.NearPlaneZ);
-                local Normal = Camera.CFrame.LookVector;
+                    local Origin = Camera.CFrame.Position + Camera.CFrame.LookVector * (0.05 - Camera.NearPlaneZ);
 
-                local Position0 = Library:GetCalculatedRayPosition(Origin, Normal, Ray0.Origin, Ray0.Direction)
-                local Position1 = Library:GetCalculatedRayPosition(Origin, Normal, Ray1.Origin, Ray1.Direction)
+                    local Normal = Camera.CFrame.LookVector;
 
-                Position0 = Camera.CFrame:PointToObjectSpace(Position0)
-                Position1 = Camera.CFrame:PointToObjectSpace(Position1)
+                    local Position0 = Library:GetCalculatedRayPosition(Origin, Normal, Ray0.Origin, Ray0.Direction)
+                    local Position1 = Library:GetCalculatedRayPosition(Origin, Normal, Ray1.Origin, Ray1.Direction)
 
-                local Size = Position1 - Position0
-                local Center = (Position0 + Position1) / 2
+                    Position0 = Camera.CFrame:PointToObjectSpace(Position0)
+                    Position1 = Camera.CFrame:PointToObjectSpace(Position1)
 
-                BlockMesh.Instance.Offset = Center
-                BlockMesh.Instance.Scale  = Size / 0.0101
-                Part.Instance.CFrame = Camera.CFrame
+                    local Size = Position1 - Position0
+                    local Center = (Position0 + Position1) / 2
+
+                    BlockMesh.Instance.Offset = Center
+                    BlockMesh.Instance.Scale  = Size / 0.0101
+
+                    Part.Instance.CFrame = Camera.CFrame
+                else
+                    DepthOfField:Tween(nil, {NearIntensity = 0})
+                    BlockMesh.Instance.Offset = Vector3New(0, 0, 0)
+                    BlockMesh.Instance.Scale  = Vector3New(0, 0, 0)
+                end
             else
                 DepthOfField:Tween(nil, {NearIntensity = 0})
                 BlockMesh.Instance.Offset = Vector3New(0, 0, 0)
                 BlockMesh.Instance.Scale  = Vector3New(0, 0, 0)
             end
-        end
-
-        -- Используем Heartbeat, но с проверкой на наличие соединения при выгрузке
-        local connection = Library:Connect(RunService.Heartbeat, UpdateBlur)
-        -- Дополнительно сохраним ссылку на connection в Window, чтобы можно было отключить при необходимости
-        Window._blurConnection = connection
-    end
-
-        -- Используем Heartbeat вместо RenderStepped для снижения нагрузки
-        Library:Connect(RunService.Heartbeat, UpdateBlur)
+        end)
     end
 
     Library.EscapePattern = function(self, String)
@@ -7520,40 +7517,43 @@ local Library do
                 end
             end
 
-            local searchDebounce
             Library:Connect(Items["Search"].Instance:GetPropertyChangedSignal("Text"), function()
-                if searchDebounce then
-                    searchDebounce:Cancel()
-                end
-                searchDebounce = task.delay(0.15, function()
-                    -- Проверяем, что Dropdown ещё существует
-                    if not Dropdown or not Dropdown.Options then
-                        return
-                    end
-                    Library:Thread(function()
+                Library:Thread(function()
+                    for Index, Value in Dropdown.Options do
                         local InputText = Items["Search"].Instance.Text
-                        local lowerInput = StringLower(InputText)
-                        local pattern = Library:EscapePattern(lowerInput)
-                        for _, Value in pairs(Dropdown.Options) do
-                            if Value and Value.Name then
-                                if InputText ~= "" then
-                                    local match = StringFind(StringLower(Value.Name), pattern)
-                                    if match then
-                                        Value.Button.Instance.Visible = true
-                                        Value:Search(false)
-                                    else
-                                        Value:Search(true)
-                                        Value.Button.Instance.Visible = false
-                                    end
-                                else
-                                    Value:Search(false)
-                                    Value.Button.Instance.Visible = true
-                                end
+                        if InputText ~= "" then
+                            if StringFind(StringLower(Value.Name), Library:EscapePattern(StringLower(InputText))) then
+                                Value.Button.Instance.Visible = true
+                                Value:Search(false)
+                            else
+                                Value:Search(true)
+                                Value.Button.Instance.Visible = false
                             end
+                        else
+                            Value:Search(false)
+                            Value.Button.Instance.Visible = true
                         end
-                    end)
+                    end
                 end)
             end)
+
+
+            for Index, Value in Dropdown.Items do 
+                Dropdown:Add(Value)
+            end
+
+            if Dropdown.Default then 
+                Dropdown:Set(Dropdown.Default)
+            end
+
+            Library.SetFlags[Dropdown.Flag] = function(Value)
+                Dropdown:Set(Value)
+            end
+
+            Dropdown.Section.Elements[#Dropdown.Section.Elements+1] = Dropdown
+            return Dropdown
+        end
+    end
 
     Library.CreateSettingsPage = function(self, Window, KeybindList)
         local Page = Window:Page({Name = "Settings", Icon = "122669828593160"})
