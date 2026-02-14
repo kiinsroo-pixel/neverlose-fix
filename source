@@ -992,76 +992,6 @@ local Library do
         end
     end
 
-    Library.MakeBlurred = function(self, Item, Window)
-        Item = Item.Instance
-        local BlurItem = Item
-
-        local Part = Instances:Create("Part", {
-            Material = Enum.Material.Glass,
-            Transparency = 1,
-            Reflectance = 1,
-            CastShadow = false,
-            Anchored = true,
-            CanCollide = false,
-            CanQuery = false,
-            CollisionGroup = " ",
-            Size = Vector3New(1, 1, 1) * 0.01,
-            Color = FromRGB(0,0,0),
-            Parent = Camera
-        })
-        table.insert(self.ToClean, Part.Instance)
-            
-        local BlockMesh = Instances:Create("BlockMesh", {Parent = Part.Instance})
-
-        local DepthOfField = Instances:Create("DepthOfFieldEffect", {
-            Parent = Lighting,
-            Enabled = true,
-            FarIntensity = 0,
-            FocusDistance = 0,
-            InFocusRadius = 1000,
-            NearIntensity = 1,
-            Name = ""
-        })
-        table.insert(self.ToClean, DepthOfField.Instance)
-
-        local function UpdateBlur()
-            if Window.IsOpen and Item.Visible then
-                DepthOfField:Tween(nil, {NearIntensity = 1})
-                Part:Tween(nil, {Transparency = 0.97})
-                Part:Tween(nil, {Size = Vector3New(1, 1, 1) * 0.01})
-
-                local Corner0 = BlurItem.AbsolutePosition;
-                local Corner1 = Corner0 + BlurItem.AbsoluteSize;
-                    
-                local Ray0 = Camera.ScreenPointToRay(Camera, Corner0.X, Corner0.Y, 1);
-                local Ray1 = Camera.ScreenPointToRay(Camera, Corner1.X, Corner1.Y, 1);
-
-                local Origin = Camera.CFrame.Position + Camera.CFrame.LookVector * (0.05 - Camera.NearPlaneZ);
-                local Normal = Camera.CFrame.LookVector;
-
-                local Position0 = Library:GetCalculatedRayPosition(Origin, Normal, Ray0.Origin, Ray0.Direction)
-                local Position1 = Library:GetCalculatedRayPosition(Origin, Normal, Ray1.Origin, Ray1.Direction)
-
-                Position0 = Camera.CFrame:PointToObjectSpace(Position0)
-                Position1 = Camera.CFrame:PointToObjectSpace(Position1)
-
-                local Size = Position1 - Position0
-                local Center = (Position0 + Position1) / 2
-
-                BlockMesh.Instance.Offset = Center
-                BlockMesh.Instance.Scale  = Size / 0.0101
-                Part.Instance.CFrame = Camera.CFrame
-            else
-                DepthOfField:Tween(nil, {NearIntensity = 0})
-                BlockMesh.Instance.Offset = Vector3New(0, 0, 0)
-                BlockMesh.Instance.Scale  = Vector3New(0, 0, 0)
-            end
-        end
-
-        -- Используем Heartbeat вместо RenderStepped для снижения нагрузки
-        Library:Connect(RunService.Heartbeat, UpdateBlur)
-    end
-
     Library.EscapePattern = function(self, String)
         local ShouldEscape = false 
 
@@ -2292,7 +2222,6 @@ local Library do
                 end
 
                 Items["MainFrame"]:MakeResizeable(Vector2New(Items["MainFrame"].Instance.AbsoluteSize.X, Items["MainFrame"].Instance.AbsoluteSize.Y), Vector2New(9999, 9999), OriginalSizes)
-                Library:MakeBlurred(Items["MainFrame"], Window)
                 
                 Items["LeftTabs"] = Instances:Create("Frame", {
                     Parent = Items["MainFrame"].Instance,
@@ -2307,7 +2236,6 @@ local Library do
                     BackgroundColor3 = FromRGB(27, 25, 29)
                 })  Items["LeftTabs"]:AddToTheme({BackgroundColor3 = "Background"})
 
-                Library:MakeBlurred(Items["LeftTabs"], Window)
 
                 local Gui = Items["MainFrame"].Instance
 
