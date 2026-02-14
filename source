@@ -1516,11 +1516,9 @@ local Library do
                         )
                     end)
 
-                    if Data.Section.IsSettings ~= true then
-                        for Index, Value in Library.OpenFrames do 
-                            if Value ~= Colorpicker then
-                                Value:SetOpen(false)
-                            end
+                    for Index, Value in pairs(Library.OpenFrames) do 
+                        if Value ~= Colorpicker and type(Value.SetOpen) == "function" then
+                            Value:SetOpen(false)
                         end
                     end
 
@@ -3007,8 +3005,8 @@ local Library do
                                 SettingsItems["Settings"].Instance.Size = UDim2New(0, 325, 0, 230)
                             end)
         
-                            for Index, Value in Library.OpenFrames do 
-                                if Value ~= Settings then 
+                            for Index, Value in pairs(Library.OpenFrames) do 
+                                if Value ~= Settings and type(Value.SetOpen) == "function" then
                                     Value:SetOpen(false)
                                 end
                             end
@@ -5071,8 +5069,8 @@ local Library do
                             SettingsItem["Settings"].Instance.Size = UDim2New(0, 245, 0, Size)
                         end)
     
-                        for Index, Value in Library.OpenFrames do 
-                            if Value ~= Settings then 
+                        for Index, Value in pairs(Library.OpenFrames) do 
+                            if Value ~= Settings and type(Value.SetOpen) == "function" then
                                 Value:SetOpen(false)
                             end
                         end
@@ -5919,8 +5917,8 @@ local Library do
                         Items["OptionHolder"].Instance.Size = UDim2New(0, Items["RealDropdown"].Instance.AbsoluteSize.X, 0, Dropdown.OptionHolderSize)
                     end)
 
-                    for Index, Value in Library.OpenFrames do 
-                        if Value ~= Dropdown and not Dropdown.Section.IsSettings then 
+                    for Index, Value in pairs(Library.OpenFrames) do 
+                        if Value ~= Dropdown and type(Value.SetOpen) == "function" then
                             Value:SetOpen(false)
                         end
                     end
